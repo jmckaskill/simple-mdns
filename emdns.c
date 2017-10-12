@@ -1,7 +1,8 @@
-#include "libmdns.h"
-#include "../hw/copy.h"
-#include "../hw/endian.h"
+#include "emdns.h"
+#include "endian.h"
 #include <stdbool.h>
+#include <string.h>
+
 
 #define MIN_MESSAGE_SIZE 512
 
@@ -125,7 +126,7 @@ static int decode_dns_name(uint8_t *buf, const void *msg, int sz, int *poff) {
 				return -1;
 			}
 
-			copy_unaligned(buf + w, u + off, 1 + labelsz);
+			memcpy(buf + w, u + off, 1 + labelsz);
 			off += 1+ labelsz;
 			w += 1 + labelsz;
 
@@ -294,7 +295,7 @@ static int encode_address(const uint8_t *host, int hostsz, bool is_ip6, const vo
 		p += 2;
 	} else {
 		*hostoff = *off;
-		copy_unaligned(p, host, hostsz);
+		memcpy(p, host, hostsz);
 		p += hostsz;
 	}
 	write_big_16(p, is_ip6 ? RTYPE_AAAA : RTYPE_A);
@@ -302,7 +303,7 @@ static int encode_address(const uint8_t *host, int hostsz, bool is_ip6, const vo
 	write_big_32(p + 4, TTL_DEFAULT);
 	write_big_16(p + 8, (uint16_t) datasz);
 	p += 10;
-	copy_unaligned(p, addr, datasz);
+	memcpy(p, addr, datasz);
 	p += datasz;
 
 	*off += reqsz;
@@ -361,9 +362,9 @@ static int encode_service(const char *label, size_t labelsz, const uint8_t *svc,
 	uint16_t nameoff = (uint16_t) *poff;
 	uint16_t svcoff = nameoff + (uint16_t) labelsz + 1;
 	*(p++) = (uint8_t) labelsz;
-	copy_unaligned(p, label, labelsz);
+	memcpy(p, label, labelsz);
 	p += labelsz;
-	copy_unaligned(p, svc, svcsz);
+	memcpy(p, svc, svcsz);
 	p += svcsz;
 	write_big_16(p, RTYPE_SRV);
 	write_big_16(p + 2, RCLASS_IN_FLUSH);
@@ -378,7 +379,7 @@ static int encode_service(const char *label, size_t labelsz, const uint8_t *svc,
         p += 2;
 	} else {
 		*hostoff = (int) (p - u);
-		copy_unaligned(p, host, hostsz);
+		memcpy(p, host, hostsz);
 		p += hostsz;
 	}
 
@@ -389,7 +390,7 @@ static int encode_service(const char *label, size_t labelsz, const uint8_t *svc,
 	write_big_32(p + 6, TTL_DEFAULT);
 	write_big_16(p + 10, (uint16_t) txtsz);
     p += 12;
-	copy_unaligned(p, txt, txtsz);
+	memcpy(p, txt, txtsz);
 	p += txtsz;
 
 	// PTR
